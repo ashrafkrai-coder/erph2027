@@ -1,11 +1,24 @@
 const frame=document.getElementById('app'),notice=document.getElementById('notice'),install=document.getElementById('install');
 document.getElementById('direct').href=GAS_URL;
 let pendingInstall=null;
+const isIos=navigator.userAgent.includes('iPhone')||navigator.userAgent.includes('iPad')||navigator.userAgent.includes('iPod');
+const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
 function connection(){notice.textContent=navigator.onLine?'Jika paparan kosong atau Google meminta log masuk, tekan Buka terus.':'Tiada internet. Sambung semula untuk menjana dan menyimpan RPH.';}
 frame.addEventListener('load',connection);frame.src=GAS_URL;
 window.addEventListener('online',()=>{connection();frame.src=GAS_URL;});window.addEventListener('offline',connection);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();pendingInstall=e;install.hidden=false;});
-install.addEventListener('click',async()=>{if(!pendingInstall)return;await pendingInstall.prompt();await pendingInstall.userChoice;pendingInstall=null;install.hidden=true;});
+install.addEventListener('click',async()=>{
+  if(pendingInstall){
+    await pendingInstall.prompt();
+    await pendingInstall.userChoice;
+    pendingInstall=null;
+    install.hidden=true;
+    return;
+  }
+  notice.textContent='Untuk pasang pada iPhone/iPad: tekan Kongsi, kemudian pilih Tambah ke Skrin Utama.';
+});
+if(isIos&&!isStandalone){install.hidden=false;}
+if(isStandalone){install.hidden=true;}
 window.addEventListener('appinstalled',()=>{install.hidden=true;pendingInstall=null;});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{notice.textContent='Aplikasi boleh dibuka, tetapi pemasangan/offline belum tersedia. Gunakan hosting HTTPS.';});
 connection();

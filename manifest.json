@@ -3,6 +3,7 @@
   "name": "Smart RPH",
   "short_name": "Smart RPH",
   "lang": "ms",
+  "description": "Penjana Rancangan Pengajaran Harian Smart RPH",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
