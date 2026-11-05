@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ms"><head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:light;--green:#176248;--ink:#17251f;--muted:#718078;--line:#e3eae5;--surface:#fff}*{box-sizing:border-box}body{margin:0;padding:16px 14px 20px;background:#f3f7f4;color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}.hero{position:relative;overflow:hidden;margin-bottom:14px;padding:17px 18px 18px;border-radius:17px;background:linear-gradient(135deg,#174f3d,#237b59);color:white}.hero:after{content:"";position:absolute;width:110px;height:110px;right:-32px;top:-49px;border:1px solid #ffffff30;border-radius:50%;box-shadow:0 0 0 14px #ffffff0d,0 0 0 29px #ffffff0a}.eyebrow{display:block;margin-bottom:5px;color:#d4e9dc;font-size:10px;font-weight:700;letter-spacing:1.2px}.hero h1{position:relative;z-index:1;margin:0;font-size:24px;line-height:1.15;letter-spacing:-.6px}.card{margin-bottom:11px;padding:15px;background:var(--surface);border:1px solid var(--line);border-radius:15px;box-shadow:0 3px 12px #173e2810}.label{display:block;margin-bottom:9px;font-size:13px;font-weight:700;color:#31443a}select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #d6e0d9;border-radius:10px;background:#fff;color:var(--ink);font:inherit}select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid #7dc5a1;outline-offset:2px}.days{display:grid;gap:2px}.day{display:flex;min-height:40px;align-items:center;gap:10px;padding:5px 2px;cursor:pointer}.day span:last-child{margin-left:auto;color:var(--muted);font-size:12px}input{accent-color:var(--green);width:18px;height:18px;margin:0}.all{margin-bottom:5px;padding-bottom:9px;border-bottom:1px solid #edf1ee;font-weight:650}.button{width:100%;min-height:48px;border:0;border-radius:12px;padding:12px;color:#fff;background:var(--green);box-shadow:0 4px 10px #1762482b;font:700 15px system-ui;cursor:pointer;transition:background .15s,transform .15s}.button:hover:not(:disabled){background:#124c38;transform:translateY(-1px)}.button:disabled{opacity:.5;cursor:wait;box-shadow:none}.hint{margin:10px 3px 0;color:var(--muted);font-size:11px;line-height:1.55}.status{margin-top:13px;padding:12px 13px;border-radius:11px;font-size:12px;line-height:1.6;white-space:pre-wrap;display:none}.status.ok{display:block;background:#e8f4ec;color:#145536}.status.error{display:block;background:#fff0ef;color:#a12828}.status.busy{display:block;background:#edf3f7;color:#31516f}.foot{margin-top:15px;color:#849188;font-size:11px;line-height:1.5}@media(prefers-reduced-motion:reduce){.button{transition:none}}
+</style></head><body>
+<header class="hero"><span class="eyebrow">SMART RPH | 2027</span><h1>Jana RPH</h1></header>
+<div class="card"><label class="label" for="week">Minggu pengajaran</label><select id="week" disabled><option>Memuatkan minggu…</option></select></div>
+<div class="card"><span class="label">Hari</span><label class="day all"><input type="checkbox" id="all" checked><span>Semua hari</span></label><div class="days" id="days"></div></div>
+<button class="button" id="generate" disabled>Jana RPH</button>
+<div class="hint">Refleksi umum dan tindakan susulan diisi automatik; boleh edit terus dalam template. Jana semula akan menggantikan catatan manual pada hari dipilih.</div>
+<div id="status" class="status" role="status" aria-live="polite"></div><div id="calendar" class="foot"></div>
+<script>
+const week=document.getElementById('week'),button=document.getElementById('generate'),all=document.getElementById('all'),status=document.getElementById('status');
+function show(message,type){status.textContent=message;status.className='status '+type;}
+function inputs(){return Array.from(document.querySelectorAll('[name=day]'));}
+function sync(){const list=inputs(),n=list.filter(c=>c.checked).length;all.checked=n===list.length;all.indeterminate=n>0&&n<list.length;button.disabled=week.disabled||n===0;}
+all.addEventListener('change',()=>{inputs().forEach(c=>c.checked=all.checked);sync();});
+button.addEventListener('click',()=>{
+  const payload={week:Number(week.value),days:inputs().filter(c=>c.checked).map(c=>c.value)};
+  if(!payload.week||!payload.days.length)return;
+  button.disabled=true;button.textContent='Sedang menjana…';week.disabled=true;all.disabled=true;inputs().forEach(c=>c.disabled=true);
+  show('Mengambil data dan mengisi template…','busy');
+  const finish=()=>{week.disabled=false;all.disabled=false;inputs().forEach(c=>c.disabled=false);button.textContent='Jana RPH';sync();};
+  google.script.run.withSuccessHandler(r=>{finish();show(r.message,'ok');}).withFailureHandler(e=>{finish();show(e.message||String(e),'error');}).rphGenerate(payload);
+});
+google.script.run.withSuccessHandler(data=>{
+  week.textContent='';data.weeks.forEach(w=>{const o=document.createElement('option');o.value=w.week;o.textContent='Minggu '+w.week+' · '+w.date;week.appendChild(o);});
+  data.days.forEach(d=>{const label=document.createElement('label');label.className='day';const c=document.createElement('input');c.type='checkbox';c.name='day';c.value=d.key;c.checked=true;c.addEventListener('change',sync);const name=document.createElement('span');name.textContent=d.label;const slots=document.createElement('span');slots.textContent=d.slots+' RPH';label.append(c,name,slots);document.getElementById('days').append(label);});
+  document.getElementById('calendar').textContent=data.calendarNote;week.disabled=false;sync();
+}).withFailureHandler(e=>{show('Tidak dapat memuatkan data: '+e.message,'error');}).rphGetOptions();
+</script></body></html>
