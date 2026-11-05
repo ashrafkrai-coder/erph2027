@@ -1,9 +1,12 @@
 const frame=document.getElementById('app'),notice=document.getElementById('notice'),install=document.getElementById('install');
-document.getElementById('direct').href=GAS_URL;
 let pendingInstall=null;
 const isIos=navigator.userAgent.includes('iPhone')||navigator.userAgent.includes('iPad')||navigator.userAgent.includes('iPod');
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
-function connection(){notice.textContent=navigator.onLine?'Jika paparan kosong atau Google meminta log masuk, tekan Buka terus.':'Tiada internet. Sambung semula untuk menjana dan menyimpan RPH.';}
+function connection(){
+  notice.innerHTML=navigator.onLine
+    ? '<span class="connection-icon online" role="img" aria-label="Dalam talian">●</span>'
+    : '<span class="connection-icon offline" role="img" aria-label="Luar talian">⊘</span>';
+}
 frame.addEventListener('load',connection);frame.src=GAS_URL;
 window.addEventListener('online',()=>{connection();frame.src=GAS_URL;});window.addEventListener('offline',connection);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();pendingInstall=e;install.hidden=false;});
